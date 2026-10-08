@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MarketHub | Buyer Dashboard</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="brand-logo">
+        <span>MarketHub</span>
+        <span class="brand-badge">Buyer Portal</span>
+      </a>
+      <div class="nav-links">
+        <a href="products.html">Catalog</a>
+        <a href="cart.html">Cart</a>
+      </div>
+      <div class="nav-actions">
+        <button onclick="handleLogout()" class="btn btn-secondary">Sign Out</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px;">
+      <div>
+        <h1 style="font-size: 1.6rem; font-weight: 800;" id="welcomeUser">Buyer Account</h1>
+        <p style="color: var(--text-muted); font-size: 0.9rem;" id="userEmail">Tracking orders & saved items</p>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div style="display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+      <button onclick="switchTab('orders')" id="tabBtnOrders" class="btn btn-primary">My Orders</button>
+      <button onclick="switchTab('wishlist')" id="tabBtnWishlist" class="btn btn-secondary">Wishlist</button>
+    </div>
+
+    <!-- Orders Section -->
+    <div id="ordersSection">
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Order #</th>
+              <th>Date</th>
+              <th>Items</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Payment</th>
+            </tr>
+          </thead>
+          <tbody id="ordersTableBody">
+            <!-- Loaded orders -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Wishlist Section -->
+    <div id="wishlistSection" style="display: none;">
+      <div class="product-grid" id="wishlistGrid">
+        <!-- Loaded wishlist -->
+      </div>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script>
+    async function initDashboard() {
+      try {
+        const meRes = await API.auth.me();
+        const user = meRes.data;
+        document.getElementById('welcomeUser').innerText = `Welcome, ${user.fullName}`;
+        document.getElementById('userEmail').innerText = `${user.email} · Buyer ID: #${user.userId}`;
+
+        loadOrders();
+        loadWishlist();
+      } catch (err) {
+        window.location.href = 'login.html';
+      }
+    }
+
+    async function loadOrders() {
+      try {
+        const res = await API.orders.list();
+        const tbody = document.getElementById('ordersTableBody');
+        if (!res.data || res.data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 32px;">No orders placed yet.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = res.data.map(o => `
+          <tr>
+            <td style="font-weight: 600;">${o.orderNumber}</td>
+            <td style="color: var(--text-muted); font-size: 0.85rem;">${o.createdAt ? o.createdAt.replace('T', ' ').slice(0, 16) : '-'}</td>
+            <td>
+              ${(o.items || []).map(i => `<div style="font-size: 0.85rem;">• ${i.productName} (x${i.quantity})</div>`).join('')}
+            </td>
+            <td style="font-weight: 700;">$${o.totalAmount.toFixed(2)}</td>
+            <td>
+              <span class="status-indicator">
+                <span class="status-dot ${o.orderStatus === 'DELIVERED' ? 'green' : (o.orderStatus === 'CANCELLED' ? 'red' : 'blue')}"></span>
+                ${o.orderStatus}
+              </span>
+            </td>
+            <td><span style="font-size: 0.8rem; font-weight: 600; color: var(--success);">${o.paymentStatus}</span></td>
+          </tr>
+        `).join('');
+      } catch (e) {}
+    }
+
+    async function loadWishlist() {
+      try {
+        const res = await API.wishlist.list();
+        const grid = document.getElementById('wishlistGrid');
+        if (!res.data || res.data.length === 0) {
+          grid.innerHTML = '<div style="grid-column: 1/-1; padding: 32px; text-align: center; color: var(--text-muted); background: #fff;">Your wishlist is empty.</div>';
+          return;
+        }
+
+        grid.innerHTML = res.data.map(w => `
+          <div class="product-card">
+            <div class="product-img-wrap">
+              <img src="${w.productImageUrl}">
+            </div>
+            <div class="product-info">
+              <a href="product-details.html?id=${w.productId}" class="product-title">${w.productName}</a>
+              <div class="product-price-row">
+                <span class="price-current">$${w.price}</span>
+              </div>
+              <div style="display: flex; gap: 8px; margin-top: 8px;">
+                <button onclick="moveToCart(${w.productId})" class="btn btn-primary" style="flex: 1;">Add to Cart</button>
+                <button onclick="removeFromWishlist(${w.productId})" class="btn btn-secondary">Remove</button>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {}
+    }
+
+    async function moveToCart(productId) {
+      await API.cart.add(productId, 1);
+      await API.wishlist.remove(productId);
+      showToast('Moved to cart!', 'success');
+      loadWishlist();
+    }
+
+    async function removeFromWishlist(productId) {
+      await API.wishlist.remove(productId);
+      showToast('Removed from wishlist', 'info');
+      loadWishlist();
+    }
+
+    function switchTab(tab) {
+      if (tab === 'orders') {
+        document.getElementById('ordersSection').style.display = 'block';
+        document.getElementById('wishlistSection').style.display = 'none';
+        document.getElementById('tabBtnOrders').className = 'btn btn-primary';
+        document.getElementById('tabBtnWishlist').className = 'btn btn-secondary';
+      } else {
+        document.getElementById('ordersSection').style.display = 'none';
+        document.getElementById('wishlistSection').style.display = 'block';
+        document.getElementById('tabBtnOrders').className = 'btn btn-secondary';
+        document.getElementById('tabBtnWishlist').className = 'btn btn-primary';
+      }
+    }
+
+    async function handleLogout() {
+      await API.auth.logout();
+      window.location.href = 'index.html';
+    }
+
+    initDashboard();
+  </script>
+</body>
+</html>

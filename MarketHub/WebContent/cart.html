@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MarketHub | Shopping Cart</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="brand-logo">
+        <span>MarketHub</span>
+      </a>
+      <div class="nav-links">
+        <a href="products.html">Continue Shopping</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container">
+    <h1 style="font-size: 1.6rem; font-weight: 800; margin-bottom: 24px;">Your Shopping Cart</h1>
+
+    <div style="display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap;">
+      <!-- Cart Items -->
+      <div style="flex: 1; min-width: 320px;" id="cartList">
+        <!-- Rendered items -->
+      </div>
+
+      <!-- Order Summary Card -->
+      <div style="width: 340px; background: #fff; padding: 24px; border-radius: var(--radius-md); border: 1px solid var(--border); flex-shrink: 0;">
+        <h2 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 16px;">Order Summary</h2>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.9rem; color: var(--text-muted);">
+          <span>Subtotal</span>
+          <span id="subtotalAmount">$0.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.9rem; color: var(--text-muted);">
+          <span>Estimated Shipping</span>
+          <span>Free Standard</span>
+        </div>
+        <div style="border-top: 1px solid var(--border); margin: 16px 0; padding-top: 16px; display: flex; justify-content: space-between; font-weight: 700; font-size: 1.15rem;">
+          <span>Total</span>
+          <span id="totalAmount">$0.00</span>
+        </div>
+        <a href="checkout.html" id="checkoutBtn" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 8px;">Proceed to Checkout</a>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script>
+    async function loadCart() {
+      try {
+        const res = await API.cart.get();
+        const cart = res.data;
+        const container = document.getElementById('cartList');
+
+        if (!cart.items || cart.items.length === 0) {
+          container.innerHTML = `
+            <div style="padding: 48px; background: #fff; text-align: center; border-radius: var(--radius-md); border: 1px solid var(--border);">
+              <p style="color: var(--text-muted); margin-bottom: 16px;">Your cart is currently empty.</p>
+              <a href="products.html" class="btn btn-primary">Browse Products</a>
+            </div>
+          `;
+          document.getElementById('checkoutBtn').style.pointerEvents = 'none';
+          document.getElementById('checkoutBtn').style.opacity = '0.5';
+          return;
+        }
+
+        document.getElementById('subtotalAmount').innerText = `$${cart.totalAmount.toFixed(2)}`;
+        document.getElementById('totalAmount').innerText = `$${cart.totalAmount.toFixed(2)}`;
+
+        container.innerHTML = cart.items.map(item => `
+          <div style="display: flex; gap: 20px; background: #fff; padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border); margin-bottom: 16px; align-items: center;">
+            <img src="${item.productImageUrl}" style="width: 80px; height: 80px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+            <div style="flex: 1;">
+              <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 4px;">${item.productName}</h3>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Unit price: $${item.unitPrice}</div>
+              <div style="font-size: 0.95rem; font-weight: 700; margin-top: 4px;">Subtotal: $${item.subtotal}</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <button onclick="updateQty(${item.productId}, ${item.quantity - 1})" class="btn btn-secondary" style="padding: 4px 10px;">-</button>
+              <span style="font-weight: 600; min-width: 24px; text-align: center;">${item.quantity}</span>
+              <button onclick="updateQty(${item.productId}, ${item.quantity + 1})" class="btn btn-secondary" style="padding: 4px 10px;">+</button>
+            </div>
+            <button onclick="removeItem(${item.productId})" style="background: none; border: none; color: var(--danger); font-size: 0.85rem; cursor: pointer; padding: 8px;">✕ Remove</button>
+          </div>
+        `).join('');
+      } catch (err) {
+        if (err.status === 401) {
+          window.location.href = 'login.html';
+        } else {
+          showToast(err.message, 'error');
+        }
+      }
+    }
+
+    async function updateQty(productId, newQty) {
+      try {
+        await API.cart.update(productId, newQty);
+        loadCart();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function removeItem(productId) {
+      try {
+        await API.cart.remove(productId);
+        showToast('Item removed', 'info');
+        loadCart();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    loadCart();
+  </script>
+</body>
+</html>

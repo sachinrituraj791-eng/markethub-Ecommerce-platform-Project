@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
+                             http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd"
+         version="4.0">
+
+    <display-name>MarketHub E-Commerce Platform</display-name>
+    <description>GUVI Full-Stack Java E-Commerce Platform</description>
+
+    <!-- Welcome File List -->
+    <welcome-file-list>
+        <welcome-file>index.html</welcome-file>
+    </welcome-file-list>
+
+    <!-- Encoding & CORS Filter -->
+    <filter>
+        <filter-name>EncodingAndCorsFilter</filter-name>
+        <filter-class>filter.EncodingAndCorsFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>EncodingAndCorsFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <!-- Authentication Filter -->
+    <filter>
+        <filter-name>AuthenticationFilter</filter-name>
+        <filter-class>filter.AuthenticationFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>AuthenticationFilter</filter-name>
+        <url-pattern>/api/cart/*</url-pattern>
+        <url-pattern>/api/orders/*</url-pattern>
+        <url-pattern>/api/wishlist/*</url-pattern>
+        <url-pattern>/api/seller/*</url-pattern>
+        <url-pattern>/api/admin/*</url-pattern>
+    </filter-mapping>
+
+    <!-- Authorization Filter -->
+    <filter>
+        <filter-name>AuthorizationFilter</filter-name>
+        <filter-class>filter.AuthorizationFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>AuthorizationFilter</filter-name>
+        <url-pattern>/api/seller/*</url-pattern>
+        <url-pattern>/api/admin/*</url-pattern>
+    </filter-mapping>
+
+    <!-- Servlets -->
+    <servlet>
+        <servlet-name>AuthServlet</servlet-name>
+        <servlet-class>controller.AuthServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AuthServlet</servlet-name>
+        <url-pattern>/api/register</url-pattern>
+        <url-pattern>/api/login</url-pattern>
+        <url-pattern>/api/logout</url-pattern>
+        <url-pattern>/api/auth/me</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ProductServlet</servlet-name>
+        <servlet-class>controller.ProductServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ProductServlet</servlet-name>
+        <url-pattern>/api/products</url-pattern>
+        <url-pattern>/api/products/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>CartServlet</servlet-name>
+        <servlet-class>controller.CartServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>CartServlet</servlet-name>
+        <url-pattern>/api/cart</url-pattern>
+        <url-pattern>/api/cart/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>OrderServlet</servlet-name>
+        <servlet-class>controller.OrderServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>OrderServlet</servlet-name>
+        <url-pattern>/api/orders</url-pattern>
+        <url-pattern>/api/orders/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>SellerServlet</servlet-name>
+        <servlet-class>controller.SellerServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>SellerServlet</servlet-name>
+        <url-pattern>/api/seller/products</url-pattern>
+        <url-pattern>/api/seller/orders</url-pattern>
+        <url-pattern>/api/seller/orders/*</url-pattern>
+        <url-pattern>/api/seller/dashboard</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>AdminServlet</servlet-name>
+        <servlet-class>controller.AdminServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AdminServlet</servlet-name>
+        <url-pattern>/api/admin/users</url-pattern>
+        <url-pattern>/api/admin/users/*</url-pattern>
+        <url-pattern>/api/admin/products</url-pattern>
+        <url-pattern>/api/admin/orders</url-pattern>
+        <url-pattern>/api/admin/dashboard</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>WishlistServlet</servlet-name>
+        <servlet-class>controller.WishlistServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>WishlistServlet</servlet-name>
+        <url-pattern>/api/wishlist</url-pattern>
+        <url-pattern>/api/wishlist/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ReviewServlet</servlet-name>
+        <servlet-class>controller.ReviewServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ReviewServlet</servlet-name>
+        <url-pattern>/api/reviews</url-pattern>
+        <url-pattern>/api/reviews/*</url-pattern>
+    </servlet-mapping>
+
+    <!-- Session Timeout: 60 minutes -->
+    <session-config>
+        <session-timeout>60</session-timeout>
+        <cookie-config>
+            <http-only>true</http-only>
+            <secure>false</secure>
+        </cookie-config>
+    </session-config>
+
+</web-app>

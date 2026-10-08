@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MarketHub | Product Details</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="brand-logo">
+        <span>MarketHub</span>
+      </a>
+      <div class="nav-links">
+        <a href="products.html">&larr; Back to Catalog</a>
+      </div>
+      <div class="nav-actions">
+        <a href="cart.html" class="btn btn-secondary">🛒 Cart</a>
+        <a href="login.html" class="btn btn-primary" id="authBtn">Sign In</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container">
+    <div id="productDetailContainer" style="display: flex; gap: 48px; background: #fff; padding: 36px; border-radius: var(--radius-md); border: 1px solid var(--border); flex-wrap: wrap;">
+      <!-- Populated via API -->
+    </div>
+
+    <!-- Customer Reviews Section -->
+    <section style="margin-top: 40px; background: #fff; padding: 32px; border-radius: var(--radius-md); border: 1px solid var(--border);">
+      <h2 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 20px;">Customer Reviews & Ratings</h2>
+      
+      <div id="reviewsList" style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 32px;">
+        <!-- Reviews list -->
+      </div>
+
+      <!-- Add Review Form -->
+      <div style="border-top: 1px solid var(--border); padding-top: 24px;">
+        <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 12px;">Write a Review</h3>
+        <form id="reviewForm" style="max-width: 600px;">
+          <div class="form-group">
+            <label class="form-label">Rating</label>
+            <select id="reviewRating" class="form-select">
+              <option value="5">★★★★★ (5 Stars - Exceptional)</option>
+              <option value="4">★★★★☆ (4 Stars - Good)</option>
+              <option value="3">★★★☆☆ (3 Stars - Average)</option>
+              <option value="2">★★☆☆☆ (2 Stars - Poor)</option>
+              <option value="1">★☆☆☆☆ (1 Star - Terrible)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Comment</label>
+            <textarea id="reviewComment" class="form-textarea" rows="4" required placeholder="Share your experience with this product..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Submit Review</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const productId = urlParams.get('id');
+
+    async function loadProduct() {
+      if (!productId) {
+        window.location.href = 'products.html';
+        return;
+      }
+
+      try {
+        const res = await API.products.get(productId);
+        const p = res.data;
+
+        document.getElementById('productDetailContainer').innerHTML = `
+          <div style="flex: 1; min-width: 300px; max-width: 500px;">
+            <img src="${p.imageUrl}" alt="${p.name}" style="width: 100%; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+          </div>
+          <div style="flex: 1; min-width: 320px; display: flex; flex-direction: column; gap: 16px;">
+            <div style="font-size: 0.85rem; color: var(--text-muted);">${p.categoryName} · Sold by <strong>${p.sellerName}</strong></div>
+            <h1 style="font-size: 1.8rem; font-weight: 800; line-height: 1.2;">${p.name}</h1>
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 0.9rem;">
+              <span style="color: #f59e0b; font-weight: 700;">★ ${p.rating ? p.rating.toFixed(1) : '5.0'}</span>
+              <span style="color: var(--text-muted);">(${p.reviewCount} customer reviews)</span>
+            </div>
+            <div style="font-size: 1.8rem; font-weight: 800; color: var(--text-main); display: flex; align-items: baseline; gap: 12px;">
+              <span>$${p.discountedPrice}</span>
+              ${p.discountPercent > 0 ? `<span style="font-size: 1.1rem; color: var(--text-muted); text-decoration: line-through;">$${p.price}</span>` : ''}
+              ${p.discountPercent > 0 ? `<span style="font-size: 0.8rem; color: var(--danger); font-weight: 600;">-${p.discountPercent}% OFF</span>` : ''}
+            </div>
+            <p style="color: #475569; font-size: 0.95rem; line-height: 1.6;">${p.description}</p>
+            <div style="font-size: 0.85rem; font-weight: 600; color: ${p.stockQuantity > 0 ? 'var(--success)' : 'var(--danger)'};">
+              ${p.stockQuantity > 0 ? `✓ In Stock (${p.stockQuantity} units available)` : '✕ Out of Stock'}
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 16px;">
+              <button onclick="handleAddToCart(${p.productId})" class="btn btn-primary" style="padding: 12px 24px; flex: 1;">Add to Cart</button>
+              <button onclick="handleBuyNow(${p.productId})" class="btn btn-accent" style="padding: 12px 24px;">Buy Now</button>
+              <button onclick="handleWishlist(${p.productId})" class="btn btn-secondary">♡ Wishlist</button>
+            </div>
+          </div>
+        `;
+
+        loadReviews();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function loadReviews() {
+      try {
+        const res = await API.reviews.getByProduct(productId);
+        const list = document.getElementById('reviewsList');
+        if (!res.data || res.data.length === 0) {
+          list.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem;">No reviews yet. Be the first to share your feedback!</p>';
+          return;
+        }
+
+        list.innerHTML = res.data.map(r => `
+          <div style="padding: 16px; background: #f8fafc; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+              <span style="font-weight: 600; font-size: 0.9rem;">${r.userName || 'Verified Buyer'}</span>
+              <span style="color: #f59e0b; font-size: 0.85rem;">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
+            </div>
+            <p style="font-size: 0.875rem; color: #334155;">${r.comment}</p>
+          </div>
+        `).join('');
+      } catch (e) {}
+    }
+
+    document.getElementById('reviewForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        await API.reviews.add({
+          productId: parseInt(productId),
+          rating: parseInt(document.getElementById('reviewRating').value),
+          comment: document.getElementById('reviewComment').value
+        });
+        showToast('Review submitted successfully!', 'success');
+        document.getElementById('reviewComment').value = '';
+        loadReviews();
+      } catch (err) {
+        if (err.status === 401) {
+          window.location.href = 'login.html';
+        } else {
+          showToast(err.message, 'error');
+        }
+      }
+    });
+
+    async function handleAddToCart(id) {
+      try {
+        await API.cart.add(id, 1);
+        showToast('Added to cart!', 'success');
+      } catch (err) {
+        if (err.status === 401) window.location.href = 'login.html';
+        else showToast(err.message, 'error');
+      }
+    }
+
+    async function handleBuyNow(id) {
+      try {
+        await API.cart.add(id, 1);
+        window.location.href = 'checkout.html';
+      } catch (err) {
+        if (err.status === 401) window.location.href = 'login.html';
+        else showToast(err.message, 'error');
+      }
+    }
+
+    async function handleWishlist(id) {
+      try {
+        await API.wishlist.add(id);
+        showToast('Added to wishlist!', 'success');
+      } catch (err) {
+        if (err.status === 401) window.location.href = 'login.html';
+        else showToast(err.message, 'error');
+      }
+    }
+
+    loadProduct();
+  </script>
+</body>
+</html>

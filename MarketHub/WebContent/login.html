@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MarketHub | Sign In</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;">
+    <div style="width: 100%; max-width: 440px; background: #fff; padding: 32px; border-radius: var(--radius-md); border: 1px solid var(--border); box-shadow: var(--shadow-sm);">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h1 style="font-size: 1.5rem; font-weight: 700;">Welcome back to MarketHub</h1>
+        <p style="color: var(--text-muted); font-size: 0.875rem;">Sign in to access your platform portal</p>
+      </div>
+
+      <!-- Quick Demo Credentials for GUVI Evaluators -->
+      <div style="background: #f1f5f9; padding: 12px; border-radius: var(--radius-sm); margin-bottom: 20px; font-size: 0.8rem;">
+        <div style="font-weight: 600; margin-bottom: 6px; color: #334155;">Quick Demo Evaluator Logins:</div>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <button type="button" onclick="fillCreds('jane@example.com', 'password123')" class="btn btn-secondary" style="font-size: 0.75rem; padding: 4px 8px;">Buyer (Jane)</button>
+          <button type="button" onclick="fillCreds('seller@apextech.com', 'password123')" class="btn btn-secondary" style="font-size: 0.75rem; padding: 4px 8px;">Seller (Apex)</button>
+          <button type="button" onclick="fillCreds('admin@markethub.com', 'password123')" class="btn btn-secondary" style="font-size: 0.75rem; padding: 4px 8px;">Admin</button>
+        </div>
+      </div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label class="form-label">Email or Username</label>
+          <input type="text" id="email" class="form-input" required placeholder="name@example.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" id="password" class="form-input" required placeholder="••••••••">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 8px;">Sign In</button>
+      </form>
+
+      <div style="margin-top: 20px; text-align: center; font-size: 0.85rem; color: var(--text-muted);">
+        Don't have an account? <a href="register.html" style="color: var(--accent); font-weight: 600;">Create one</a>
+      </div>
+      <div style="margin-top: 8px; text-align: center; font-size: 0.85rem;">
+        <a href="index.html" style="color: var(--text-muted);">&larr; Back to Marketplace</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    function fillCreds(u, p) {
+      document.getElementById('email').value = u;
+      document.getElementById('password').value = p;
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const res = await API.auth.login({ emailOrUsername: email, password });
+        showToast('Login successful! Redirecting...', 'success');
+        setTimeout(() => {
+          if (res.data.role === 'ADMIN') {
+            window.location.href = 'admin-dashboard.html';
+          } else if (res.data.role === 'SELLER') {
+            window.location.href = 'seller-dashboard.html';
+          } else {
+            window.location.href = 'buyer-dashboard.html';
+          }
+        }, 600);
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MarketHub | System Administration</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="brand-logo">
+        <span>MarketHub</span>
+        <span class="brand-badge" style="color: var(--danger);">Governance Console</span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html">Live Marketplace</a>
+      </div>
+      <div class="nav-actions">
+        <button onclick="handleLogout()" class="btn btn-secondary">Sign Out</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container">
+    <div style="margin-bottom: 28px;">
+      <h1 style="font-size: 1.6rem; font-weight: 800;">Platform Administration Dashboard</h1>
+      <p style="color: var(--text-muted); font-size: 0.875rem;">Global system audit, multi-tenant user access control, and platform KPIs</p>
+    </div>
+
+    <!-- Admin KPI Cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px;">
+      <div style="background: #fff; padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border);">
+        <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">PLATFORM REVENUE</div>
+        <div style="font-size: 1.6rem; font-weight: 800; margin-top: 4px;" id="kpiRevenue">$0.00</div>
+      </div>
+      <div style="background: #fff; padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border);">
+        <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">TOTAL USERS</div>
+        <div style="font-size: 1.6rem; font-weight: 800; margin-top: 4px;" id="kpiUsers">0</div>
+      </div>
+      <div style="background: #fff; padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border);">
+        <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">TOTAL BUYERS</div>
+        <div style="font-size: 1.6rem; font-weight: 800; margin-top: 4px;" id="kpiBuyers">0</div>
+      </div>
+      <div style="background: #fff; padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border);">
+        <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">ACTIVE SELLERS</div>
+        <div style="font-size: 1.6rem; font-weight: 800; margin-top: 4px;" id="kpiSellers">0</div>
+      </div>
+      <div style="background: #fff; padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border);">
+        <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">TOTAL ORDERS</div>
+        <div style="font-size: 1.6rem; font-weight: 800; margin-top: 4px;" id="kpiOrders">0</div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div style="display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+      <button onclick="switchTab('users')" id="tabUsersBtn" class="btn btn-primary">User Governance</button>
+      <button onclick="switchTab('products')" id="tabProductsBtn" class="btn btn-secondary">Global Catalog</button>
+      <button onclick="switchTab('orders')" id="tabOrdersBtn" class="btn btn-secondary">All Orders</button>
+    </div>
+
+    <!-- Users Governance Table -->
+    <div id="usersSection">
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>User ID</th>
+              <th>Full Name</th>
+              <th>Email</th>
+              <th>Assigned Role</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody">
+            <!-- Loaded users -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Global Products Table -->
+    <div id="productsSection" style="display: none;">
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Product</th>
+              <th>Seller</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th>Approved</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="productsTableBody">
+            <!-- Loaded products -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Global Orders Table -->
+    <div id="ordersSection" style="display: none;">
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Order #</th>
+              <th>Buyer</th>
+              <th>Total</th>
+              <th>Address</th>
+              <th>Order Status</th>
+              <th>Payment</th>
+            </tr>
+          </thead>
+          <tbody id="ordersTableBody">
+            <!-- Loaded orders -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script>
+    async function initAdmin() {
+      try {
+        const meRes = await API.auth.me();
+        if (meRes.data.role !== 'ADMIN') {
+          window.location.href = 'index.html';
+          return;
+        }
+        loadDashboardStats();
+        loadUsers();
+        loadProducts();
+        loadOrders();
+      } catch (e) {
+        window.location.href = 'login.html';
+      }
+    }
+
+    async function loadDashboardStats() {
+      try {
+        const res = await API.admin.getDashboard();
+        const d = res.data;
+        document.getElementById('kpiRevenue').innerText = `$${d.totalRevenue ? Number(d.totalRevenue).toFixed(2) : '0.00'}`;
+        document.getElementById('kpiUsers').innerText = d.totalUsers || 0;
+        document.getElementById('kpiBuyers').innerText = d.totalBuyers || 0;
+        document.getElementById('kpiSellers').innerText = d.totalSellers || 0;
+        document.getElementById('kpiOrders').innerText = d.totalOrders || 0;
+      } catch (e) {}
+    }
+
+    async function loadUsers() {
+      try {
+        const res = await API.admin.getUsers();
+        const tbody = document.getElementById('usersTableBody');
+        tbody.innerHTML = res.data.map(u => `
+          <tr>
+            <td>#${u.userId}</td>
+            <td style="font-weight: 600;">${u.fullName}</td>
+            <td>${u.email}</td>
+            <td>
+              <span style="font-weight: 600; font-size: 0.8rem; color: ${u.role === 'ADMIN' ? 'var(--danger)' : (u.role === 'SELLER' ? 'var(--accent)' : 'var(--text-muted)')};">
+                ${u.role}
+              </span>
+            </td>
+            <td>
+              <span class="status-indicator">
+                <span class="status-dot ${u.isActive ? 'green' : 'red'}"></span>
+                ${u.isActive ? 'Active' : 'Suspended'}
+              </span>
+            </td>
+            <td>
+              ${u.role !== 'ADMIN' ? `
+                <button onclick="toggleUser(${u.userId}, ${!u.isActive})" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.75rem;">
+                  ${u.isActive ? 'Deactivate' : 'Activate'}
+                </button>
+              ` : '<span style="font-size: 0.75rem; color: var(--text-muted);">Root</span>'}
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {}
+    }
+
+    async function toggleUser(userId, newStatus) {
+      try {
+        await API.admin.toggleUserStatus(userId, newStatus);
+        showToast('User status updated successfully', 'success');
+        loadUsers();
+        loadDashboardStats();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function loadProducts() {
+      try {
+        const res = await API.admin.getProducts();
+        const tbody = document.getElementById('productsTableBody');
+        tbody.innerHTML = res.data.map(p => `
+          <tr>
+            <td>#${p.productId}</td>
+            <td style="font-weight: 600;">${p.name}</td>
+            <td>${p.sellerName || 'Merchant'}</td>
+            <td style="font-weight: 700;">$${p.price}</td>
+            <td>${p.stockQuantity}</td>
+            <td>
+              <span class="status-indicator">
+                <span class="status-dot ${p.isApproved ? 'green' : 'amber'}"></span>
+                ${p.isApproved ? 'Approved' : 'Pending'}
+              </span>
+            </td>
+            <td>
+              <button onclick="deleteProduct(${p.productId})" style="background: none; border: none; color: var(--danger); font-size: 0.8rem; cursor: pointer;">Remove</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {}
+    }
+
+    async function deleteProduct(id) {
+      if (!confirm('Administrative Removal: Remove this product from the platform?')) return;
+      try {
+        await API.products.delete(id);
+        showToast('Product removed', 'info');
+        loadProducts();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function loadOrders() {
+      try {
+        const res = await API.admin.getOrders();
+        const tbody = document.getElementById('ordersTableBody');
+        tbody.innerHTML = res.data.map(o => `
+          <tr>
+            <td style="font-weight: 600;">${o.orderNumber}</td>
+            <td>${o.buyerName || 'Buyer'}</td>
+            <td style="font-weight: 700;">$${o.totalAmount.toFixed(2)}</td>
+            <td style="font-size: 0.85rem; max-width: 200px;">${o.shippingAddress}</td>
+            <td>
+              <span class="status-indicator">
+                <span class="status-dot ${o.orderStatus === 'DELIVERED' ? 'green' : 'blue'}"></span>
+                ${o.orderStatus}
+              </span>
+            </td>
+            <td><span style="font-size: 0.8rem; color: var(--success); font-weight: 600;">${o.paymentStatus}</span></td>
+          </tr>
+        `).join('');
+      } catch (e) {}
+    }
+
+    function switchTab(t) {
+      document.getElementById('usersSection').style.display = t === 'users' ? 'block' : 'none';
+      document.getElementById('productsSection').style.display = t === 'products' ? 'block' : 'none';
+      document.getElementById('ordersSection').style.display = t === 'orders' ? 'block' : 'none';
+
+      document.getElementById('tabUsersBtn').className = t === 'users' ? 'btn btn-primary' : 'btn btn-secondary';
+      document.getElementById('tabProductsBtn').className = t === 'products' ? 'btn btn-primary' : 'btn btn-secondary';
+      document.getElementById('tabOrdersBtn').className = t === 'orders' ? 'btn btn-primary' : 'btn btn-secondary';
+    }
+
+    async function handleLogout() {
+      await API.auth.logout();
+      window.location.href = 'index.html';
+    }
+
+    initAdmin();
+  </script>
+</body>
+</html>

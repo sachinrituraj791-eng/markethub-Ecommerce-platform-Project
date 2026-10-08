@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MarketHub | Create Account</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;">
+    <div style="width: 100%; max-width: 480px; background: #fff; padding: 32px; border-radius: var(--radius-md); border: 1px solid var(--border); box-shadow: var(--shadow-sm);">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h1 style="font-size: 1.5rem; font-weight: 700;">Join MarketHub</h1>
+        <p style="color: var(--text-muted); font-size: 0.875rem;">Create a Buyer or Seller account</p>
+      </div>
+
+      <form id="registerForm">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input type="text" id="fullName" class="form-input" required placeholder="Alex Mercer">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input type="text" id="username" class="form-input" required placeholder="alex_m">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input type="email" id="email" class="form-input" required placeholder="alex@example.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" id="password" class="form-input" required minlength="6" placeholder="Min. 6 characters">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Account Role</label>
+          <select id="role" class="form-select">
+            <option value="BUYER">Buyer (Browse, order, and review)</option>
+            <option value="SELLER">Seller (List products and manage inventory)</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 8px;">Create Account</button>
+      </form>
+
+      <div style="margin-top: 20px; text-align: center; font-size: 0.85rem; color: var(--text-muted);">
+        Already have an account? <a href="login.html" style="color: var(--accent); font-weight: 600;">Sign in</a>
+      </div>
+      <div style="margin-top: 8px; text-align: center; font-size: 0.85rem;">
+        <a href="index.html" style="color: var(--text-muted);">&larr; Back to Marketplace</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {
+        fullName: document.getElementById('fullName').value,
+        username: document.getElementById('username').value,
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value,
+        role: document.getElementById('role').value
+      };
+
+      try {
+        const res = await API.auth.register(payload);
+        showToast('Registration successful! Welcome.', 'success');
+        setTimeout(() => {
+          if (res.data.role === 'SELLER') {
+            window.location.href = 'seller-dashboard.html';
+          } else {
+            window.location.href = 'buyer-dashboard.html';
+          }
+        }, 600);
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+  </script>
+</body>
+</html>

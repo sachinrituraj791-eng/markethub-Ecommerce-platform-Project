@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MarketHub | Seller Portal</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="brand-logo">
+        <span>MarketHub</span>
+        <span class="brand-badge" style="color: #10b981;">Merchant Portal</span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html">Marketplace Storefront</a>
+      </div>
+      <div class="nav-actions">
+        <button onclick="handleLogout()" class="btn btn-secondary">Sign Out</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+      <div>
+        <h1 style="font-size: 1.6rem; font-weight: 800;" id="sellerTitle">Seller Operations Hub</h1>
+        <p style="color: var(--text-muted); font-size: 0.875rem;">Manage catalog listings, real-time inventory, and customer fulfillment</p>
+      </div>
+      <button onclick="openProductModal()" class="btn btn-primary">+ Add New Product</button>
+    </div>
+
+    <!-- Stats KPIs -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 32px;">
+      <div style="background: #fff; padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border);">
+        <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Gross Revenue</div>
+        <div style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;" id="statRevenue">$0.00</div>
+      </div>
+      <div style="background: #fff; padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border);">
+        <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Orders Received</div>
+        <div style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;" id="statOrders">0</div>
+      </div>
+      <div style="background: #fff; padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border);">
+        <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Catalog Items</div>
+        <div style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;" id="statProducts">0</div>
+      </div>
+      <div style="background: #fff; padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border);">
+        <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Low Stock Alert (&le;10)</div>
+        <div style="font-size: 1.8rem; font-weight: 800; margin-top: 4px; color: var(--warning);" id="statLowStock">0</div>
+      </div>
+    </div>
+
+    <!-- Section Tabs -->
+    <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+      <button onclick="showSection('products')" id="tabProductsBtn" class="btn btn-primary">My Products</button>
+      <button onclick="showSection('orders')" id="tabOrdersBtn" class="btn btn-secondary">Merchant Orders</button>
+    </div>
+
+    <!-- Products Table -->
+    <div id="productsSection">
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Discount</th>
+              <th>Stock</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="sellerProductsBody">
+            <!-- Rendered via JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Orders Table -->
+    <div id="ordersSection" style="display: none;">
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Order #</th>
+              <th>Customer</th>
+              <th>Delivery Address</th>
+              <th>Total</th>
+              <th>Current Status</th>
+              <th>Fulfillment Action</th>
+            </tr>
+          </thead>
+          <tbody id="sellerOrdersBody">
+            <!-- Rendered via JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Modal for Create/Edit Product -->
+    <div id="productModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; padding: 20px;">
+      <div style="background: #fff; width: 100%; max-width: 540px; padding: 28px; border-radius: var(--radius-md); max-height: 90vh; overflow-y: auto;">
+        <h2 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 16px;" id="modalTitle">Create New Listing</h2>
+        <form id="productForm">
+          <input type="hidden" id="editProductId">
+          <div class="form-group">
+            <label class="form-label">Product Name</label>
+            <input type="text" id="pName" class="form-input" required placeholder="High Precision Hardware">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Category</label>
+            <select id="pCategory" class="form-select">
+              <option value="1">Electronics</option>
+              <option value="2">Home & Living</option>
+              <option value="3">Apparel & Fashion</option>
+              <option value="4">Books & Media</option>
+              <option value="5">Fitness & Wellness</option>
+            </select>
+          </div>
+          <div style="display: flex; gap: 12px;">
+            <div class="form-group" style="flex: 1;">
+              <label class="form-label">Price ($)</label>
+              <input type="number" step="0.01" id="pPrice" class="form-input" required placeholder="99.99">
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label class="form-label">Discount (%)</label>
+              <input type="number" id="pDiscount" class="form-input" value="0" min="0" max="100">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Stock Quantity</label>
+            <input type="number" id="pStock" class="form-input" required min="0" placeholder="25">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea id="pDesc" class="form-textarea" rows="3" required placeholder="Detailed specifications..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Image URL</label>
+            <input type="url" id="pImageUrl" class="form-input" placeholder="https://picsum.photos/seed/item/600/600">
+          </div>
+          <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px;">
+            <button type="button" onclick="closeProductModal()" class="btn btn-secondary">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Product</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script>
+    async function initSeller() {
+      try {
+        const meRes = await API.auth.me();
+        if (meRes.data.role !== 'SELLER' && meRes.data.role !== 'ADMIN') {
+          window.location.href = 'index.html';
+          return;
+        }
+        document.getElementById('sellerTitle').innerText = `${meRes.data.fullName} · Merchant Console`;
+        loadDashboardStats();
+        loadSellerProducts();
+        loadSellerOrders();
+      } catch (e) {
+        window.location.href = 'login.html';
+      }
+    }
+
+    async function loadDashboardStats() {
+      try {
+        const res = await API.seller.getDashboard();
+        const d = res.data;
+        document.getElementById('statRevenue').innerText = `$${d.totalRevenue ? Number(d.totalRevenue).toFixed(2) : '0.00'}`;
+        document.getElementById('statOrders').innerText = d.totalOrders || 0;
+        document.getElementById('statProducts').innerText = d.totalProducts || 0;
+        document.getElementById('statLowStock').innerText = d.lowStockCount || 0;
+      } catch (e) {}
+    }
+
+    async function loadSellerProducts() {
+      try {
+        const res = await API.seller.getProducts();
+        const tbody = document.getElementById('sellerProductsBody');
+        if (!res.data || res.data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 32px;">No products listed. Click "+ Add New Product" to list one.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = res.data.map(p => `
+          <tr>
+            <td>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <img src="${p.imageUrl}" style="width: 44px; height: 44px; object-fit: cover; border-radius: var(--radius-sm);">
+                <div>
+                  <div style="font-weight: 600;">${p.name}</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">ID: #${p.productId}</div>
+                </div>
+              </div>
+            </td>
+            <td>${p.categoryName || 'General'}</td>
+            <td style="font-weight: 700;">$${p.price}</td>
+            <td>${p.discountPercent}%</td>
+            <td>
+              <span style="font-weight: 600; color: ${p.stockQuantity <= 10 ? 'var(--warning)' : 'var(--text-main)'};">
+                ${p.stockQuantity}
+              </span>
+            </td>
+            <td>
+              <span class="status-indicator">
+                <span class="status-dot ${p.isActive ? 'green' : 'red'}"></span>
+                ${p.isActive ? 'Active' : 'Disabled'}
+              </span>
+            </td>
+            <td>
+              <div style="display: flex; gap: 6px;">
+                <button onclick="editProduct(${JSON.stringify(p).replace(/"/g, '&quot;')})" class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.75rem;">Edit</button>
+                <button onclick="deleteProduct(${p.productId})" style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 0.8rem; padding: 4px;">Delete</button>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {}
+    }
+
+    async function loadSellerOrders() {
+      try {
+        const res = await API.seller.getOrders();
+        const tbody = document.getElementById('sellerOrdersBody');
+        if (!res.data || res.data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 32px;">No customer orders placed yet.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = res.data.map(o => `
+          <tr>
+            <td style="font-weight: 600;">${o.orderNumber}</td>
+            <td>${o.buyerName || 'Buyer'}</td>
+            <td style="font-size: 0.85rem; max-width: 240px;">${o.shippingAddress}</td>
+            <td style="font-weight: 700;">$${o.totalAmount.toFixed(2)}</td>
+            <td>
+              <span class="status-indicator">
+                <span class="status-dot ${o.orderStatus === 'DELIVERED' ? 'green' : 'blue'}"></span>
+                ${o.orderStatus}
+              </span>
+            </td>
+            <td>
+              <select onchange="updateOrderStatus(${o.orderId}, this.value)" class="form-select" style="font-size: 0.8rem; padding: 4px 8px;">
+                <option value="PENDING" ${o.orderStatus === 'PENDING' ? 'selected' : ''}>PENDING</option>
+                <option value="CONFIRMED" ${o.orderStatus === 'CONFIRMED' ? 'selected' : ''}>CONFIRMED</option>
+                <option value="PROCESSING" ${o.orderStatus === 'PROCESSING' ? 'selected' : ''}>PROCESSING</option>
+                <option value="SHIPPED" ${o.orderStatus === 'SHIPPED' ? 'selected' : ''}>SHIPPED</option>
+                <option value="DELIVERED" ${o.orderStatus === 'DELIVERED' ? 'selected' : ''}>DELIVERED</option>
+                <option value="CANCELLED" ${o.orderStatus === 'CANCELLED' ? 'selected' : ''}>CANCELLED</option>
+              </select>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {}
+    }
+
+    async function updateOrderStatus(orderId, status) {
+      try {
+        await API.seller.updateOrderStatus(orderId, status);
+        showToast(`Order status transitioned to ${status}`, 'success');
+        loadDashboardStats();
+        loadSellerOrders();
+      } catch (err) {
+        showToast(err.message, 'error');
+        loadSellerOrders();
+      }
+    }
+
+    function openProductModal() {
+      document.getElementById('modalTitle').innerText = 'Create New Listing';
+      document.getElementById('editProductId').value = '';
+      document.getElementById('productForm').reset();
+      document.getElementById('productModal').style.display = 'flex';
+    }
+
+    function closeProductModal() {
+      document.getElementById('productModal').style.display = 'none';
+    }
+
+    function editProduct(p) {
+      document.getElementById('modalTitle').innerText = 'Edit Product Listing';
+      document.getElementById('editProductId').value = p.productId;
+      document.getElementById('pName').value = p.name;
+      document.getElementById('pCategory').value = p.categoryId;
+      document.getElementById('pPrice').value = p.price;
+      document.getElementById('pDiscount').value = p.discountPercent;
+      document.getElementById('pStock').value = p.stockQuantity;
+      document.getElementById('pDesc').value = p.description;
+      document.getElementById('pImageUrl').value = p.imageUrl;
+      document.getElementById('productModal').style.display = 'flex';
+    }
+
+    document.getElementById('productForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const editId = document.getElementById('editProductId').value;
+      const payload = {
+        name: document.getElementById('pName').value,
+        categoryId: parseInt(document.getElementById('pCategory').value),
+        price: parseFloat(document.getElementById('pPrice').value),
+        discountPercent: parseInt(document.getElementById('pDiscount').value) || 0,
+        stockQuantity: parseInt(document.getElementById('pStock').value),
+        description: document.getElementById('pDesc').value,
+        imageUrl: document.getElementById('pImageUrl').value || 'https://picsum.photos/seed/product/600/600',
+        isActive: true
+      };
+
+      try {
+        if (editId) {
+          await API.products.update(editId, payload);
+          showToast('Product listing updated successfully!', 'success');
+        } else {
+          await API.products.create(payload);
+          showToast('Product published to catalog!', 'success');
+        }
+        closeProductModal();
+        loadSellerProducts();
+        loadDashboardStats();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+
+    async function deleteProduct(id) {
+      if (!confirm('Are you sure you want to delete this product listing?')) return;
+      try {
+        await API.products.delete(id);
+        showToast('Product soft-deleted from active marketplace', 'info');
+        loadSellerProducts();
+        loadDashboardStats();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    function showSection(s) {
+      if (s === 'products') {
+        document.getElementById('productsSection').style.display = 'block';
+        document.getElementById('ordersSection').style.display = 'none';
+        document.getElementById('tabProductsBtn').className = 'btn btn-primary';
+        document.getElementById('tabOrdersBtn').className = 'btn btn-secondary';
+      } else {
+        document.getElementById('productsSection').style.display = 'none';
+        document.getElementById('ordersSection').style.display = 'block';
+        document.getElementById('tabProductsBtn').className = 'btn btn-secondary';
+        document.getElementById('tabOrdersBtn').className = 'btn btn-primary';
+      }
+    }
+
+    async function handleLogout() {
+      await API.auth.logout();
+      window.location.href = 'index.html';
+    }
+
+    initSeller();
+  </script>
+</body>
+</html>

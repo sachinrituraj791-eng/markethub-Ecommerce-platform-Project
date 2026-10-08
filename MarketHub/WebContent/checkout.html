@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MarketHub | Checkout</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="brand-logo">
+        <span>MarketHub</span>
+      </a>
+      <div class="nav-links">
+        <a href="cart.html">&larr; Return to Cart</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container" style="max-width: 900px;">
+    <h1 style="font-size: 1.6rem; font-weight: 800; margin-bottom: 24px;">Secure Checkout & Transaction</h1>
+
+    <!-- Transaction info banner -->
+    <div style="background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 14px 18px; border-radius: var(--radius-sm); margin-bottom: 24px; font-size: 0.85rem;">
+      <strong>ACID Guarantee:</strong> Order submission invokes an atomic JDBC transaction. Stock deduction, order generation, line item creation, and cart evacuation succeed or roll back together.
+    </div>
+
+    <form id="checkoutForm">
+      <div style="background: #fff; padding: 28px; border-radius: var(--radius-md); border: 1px solid var(--border); margin-bottom: 24px;">
+        <h2 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 16px;">1. Shipping Address</h2>
+        <div class="form-group">
+          <label class="form-label">Delivery Street Address & Postal Code</label>
+          <textarea id="shippingAddress" class="form-textarea" rows="3" required placeholder="742 Evergreen Terrace, Springfield, OR 97477"></textarea>
+        </div>
+      </div>
+
+      <div style="background: #fff; padding: 28px; border-radius: var(--radius-md); border: 1px solid var(--border); margin-bottom: 24px;">
+        <h2 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 16px;">2. Payment Method</h2>
+        <div class="form-group">
+          <label class="form-label">Payment Gateway</label>
+          <select id="paymentMethod" class="form-select">
+            <option value="CREDIT_CARD">Credit / Debit Card (Visa, Mastercard, Amex)</option>
+            <option value="PAYPAL">PayPal Express Checkout</option>
+            <option value="UPI">UPI / Net Banking</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="background: #fff; padding: 28px; border-radius: var(--radius-md); border: 1px solid var(--border); margin-bottom: 24px;">
+        <h2 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 16px;">3. Order Review</h2>
+        <div id="checkoutSummaryList" style="margin-bottom: 16px; font-size: 0.9rem;">
+          <!-- Loaded items -->
+        </div>
+        <div style="border-top: 1px solid var(--border); padding-top: 16px; display: flex; justify-content: space-between; font-weight: 800; font-size: 1.2rem;">
+          <span>Total To Pay:</span>
+          <span id="checkoutTotal">$0.00</span>
+        </div>
+      </div>
+
+      <button type="submit" id="submitOrderBtn" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 1rem;">
+        Authorize Payment & Place Order
+      </button>
+    </form>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script>
+    async function loadCartSummary() {
+      try {
+        const res = await API.cart.get();
+        const cart = res.data;
+        if (!cart.items || cart.items.length === 0) {
+          window.location.href = 'cart.html';
+          return;
+        }
+
+        document.getElementById('checkoutTotal').innerText = `$${cart.totalAmount.toFixed(2)}`;
+        document.getElementById('checkoutSummaryList').innerHTML = cart.items.map(item => `
+          <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed var(--border);">
+            <span>${item.productName} (x${item.quantity})</span>
+            <span style="font-weight: 600;">$${item.subtotal}</span>
+          </div>
+        `).join('');
+
+        // Pre-fill user address if available
+        const meRes = await API.auth.me().catch(() => ({}));
+        if (meRes.data && meRes.data.address) {
+          document.getElementById('shippingAddress').value = meRes.data.address;
+        }
+      } catch (err) {
+        if (err.status === 401) window.location.href = 'login.html';
+      }
+    }
+
+    document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submitOrderBtn');
+      btn.disabled = true;
+      btn.innerText = 'Processing Transaction (ACID Commit)...';
+
+      const payload = {
+        shippingAddress: document.getElementById('shippingAddress').value,
+        paymentMethod: document.getElementById('paymentMethod').value
+      };
+
+      try {
+        const res = await API.orders.place(payload);
+        showToast('Order successfully confirmed and inventory committed!', 'success');
+        setTimeout(() => {
+          window.location.href = 'buyer-dashboard.html?placed=true';
+        }, 1000);
+      } catch (err) {
+        showToast(err.message, 'error');
+        btn.disabled = false;
+        btn.innerText = 'Authorize Payment & Place Order';
+      }
+    });
+
+    loadCartSummary();
+  </script>
+</body>
+</html>

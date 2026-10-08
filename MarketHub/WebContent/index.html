@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MarketHub | Enterprise Multi-Role E-Commerce</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="brand-logo">
+        <span>MarketHub</span>
+        <span class="brand-badge">GUVI Evaluation Edition</span>
+      </a>
+      <div class="nav-links">
+        <a href="products.html">Catalog</a>
+        <a href="products.html?category=1">Electronics</a>
+        <a href="products.html?category=2">Home & Living</a>
+        <a href="products.html?category=3">Apparel</a>
+      </div>
+      <div class="nav-actions">
+        <a href="cart.html" class="btn btn-secondary" id="cartBtn">
+          🛒 Cart (<span id="cartCount">0</span>)
+        </a>
+        <a href="login.html" class="btn btn-primary" id="authBtn">Sign In</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container">
+    <section class="hero">
+      <h1>The Unified Commerce Platform for Modern Retail</h1>
+      <p>A layered architecture powered by Java Servlets, direct JDBC transactional operations, and strict role-based access control for Buyers, Merchants, and Administrators.</p>
+      <div style="display: flex; gap: 12px; margin-top: 12px;">
+        <a href="products.html" class="btn btn-accent">Explore Catalog</a>
+        <a href="login.html" class="btn btn-secondary">Platform Portals</a>
+      </div>
+    </section>
+
+    <section style="margin-bottom: 48px;">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 24px;">
+        <div>
+          <h2 style="font-size: 1.5rem; font-weight: 700;">Featured Marketplace Collections</h2>
+          <p style="color: var(--text-muted); font-size: 0.9rem;">Verified catalog listings with real-time inventory management</p>
+        </div>
+        <a href="products.html" style="font-size: 0.9rem; font-weight: 600; color: var(--accent);">View all &rarr;</a>
+      </div>
+      <div class="product-grid" id="featuredGrid">
+        <!-- Injected via JavaScript from /api/products -->
+      </div>
+    </section>
+  </main>
+
+  <footer style="border-top: 1px solid var(--border); padding: 40px 24px; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+    <p>MarketHub E-Commerce Architecture &copy; 2026. Designed for GUVI System Evaluation.</p>
+  </footer>
+
+  <script src="js/api.js"></script>
+  <script>
+    async function loadFeatured() {
+      try {
+        const res = await API.products.list({ limit: 4, sort: 'rating' });
+        const grid = document.getElementById('featuredGrid');
+        if (res.data && res.data.length > 0) {
+          grid.innerHTML = res.data.map(p => `
+            <div class="product-card">
+              <div class="product-img-wrap">
+                <img src="${p.imageUrl}" alt="${p.name}">
+              </div>
+              <div class="product-info">
+                <div class="product-meta">${p.categoryName || 'Catalog'} · Sold by ${p.sellerName || 'Merchant'}</div>
+                <a href="product-details.html?id=${p.productId}" class="product-title">${p.name}</a>
+                <div class="product-price-row">
+                  <span class="price-current">$${p.discountedPrice}</span>
+                  ${p.discountPercent > 0 ? `<span class="price-original">$${p.price}</span>` : ''}
+                </div>
+                <button onclick="addToCart(${p.productId})" class="btn btn-secondary" style="width: 100%; margin-top: 8px;">Add to Cart</button>
+              </div>
+            </div>
+          `).join('');
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function addToCart(id) {
+      try {
+        await API.cart.add(id, 1);
+        showToast('Item added to shopping cart!', 'success');
+        updateCartCount();
+      } catch (err) {
+        if (err.status === 401) {
+          window.location.href = 'login.html';
+        } else {
+          showToast(err.message, 'error');
+        }
+      }
+    }
+
+    async function updateCartCount() {
+      try {
+        const res = await API.cart.get();
+        if (res.data) {
+          document.getElementById('cartCount').innerText = res.data.itemCount || 0;
+        }
+      } catch (e) {}
+    }
+
+    async function checkAuth() {
+      try {
+        const res = await API.auth.me();
+        if (res.data) {
+          const btn = document.getElementById('authBtn');
+          if (res.data.role === 'ADMIN') {
+            btn.innerText = 'Admin Portal';
+            btn.href = 'admin-dashboard.html';
+          } else if (res.data.role === 'SELLER') {
+            btn.innerText = 'Seller Portal';
+            btn.href = 'seller-dashboard.html';
+          } else {
+            btn.innerText = 'My Account';
+            btn.href = 'buyer-dashboard.html';
+          }
+        }
+      } catch (e) {}
+    }
+
+    loadFeatured();
+    updateCartCount();
+    checkAuth();
+  </script>
+</body>
+</html>

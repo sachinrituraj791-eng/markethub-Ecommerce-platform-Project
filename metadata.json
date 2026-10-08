@@ -1,0 +1,6 @@
+{
+  "name": "MarketHub - Enterprise E-Commerce Platform",
+  "description": "Enterprise-grade online e-commerce platform featuring multi-role Buyer, Seller, and Admin portals, robust catalog, cart, transactional checkout, and comprehensive GUVI evaluation architecture.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
