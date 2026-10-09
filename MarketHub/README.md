@@ -1,11 +1,5 @@
 # MarketHub — Enterprise Online E-Commerce Platform
 
-> **GUVI Final Project Evaluation Submission**  
-> **Architecture & Technology Stack:** Java 17+, Java Servlets 4.0, Native JDBC, MySQL 8.0, HTML5/CSS3/JavaScript (Fetch API), Apache Tomcat 9/10  
-> **Evaluation Domains:** System Design (8 Marks), Core Java (10 Marks), Database & JDBC (8 Marks), Servlets & HTTP Integration (7 Marks)
-
----
-
 ## 1. Problem Statement & Executive Summary
 Modern online e-commerce platforms require high reliability, strict transactional consistency (ACID) for financial transactions and inventory decrements, robust role-based access control (RBAC), and a clean layered separation of concerns.
 
